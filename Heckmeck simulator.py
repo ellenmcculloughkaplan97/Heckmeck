@@ -34,62 +34,82 @@ class Roll():
     def __init__(self):
         self.go_count={}
         self.go=[]
+        self.score=0
     
     #function to roll the dice randomly
     def roll_dice(self):
-        score=random.randint(1,6)
-        return score
+        self.score=random.randint(1,6)
+        return self.score
+    
+    #method has been created but not yet implemented. 
+    def worm_conversion(self):
+        self.go_count['worm'] = self.go_count['6']
+        del self.go_count['6']
+        return self.go_count
     
     
     def one_roll_sim(self,dice_left): #dice left will be inputted externally
         self.go=[self.roll_dice() for i in range(dice_left)] #rolls 6 dice 
         #fills go_count dictionary with values from that roll
-        self.go_count= {i:self.go.count(i) for i in self.go}
+        self.go_count= {str(i):self.go.count(i) for i in self.go}
+        #convert into including worms
+        if '6' in self.go_count.keys(): #if any sixes were rolled, do conversion
+            self.go_count=self.worm_conversion()
         return self.go_count
+    
           
 "Scoring simulator class"  
 class Round(): 
     def __init__(self):
         #dictionary to store the dice a player has saved     
-        self.saved={6:0,5:0,4:0,3:0,2:0,1:0}
+        self.dice_left=8 #initialise the dice left at 8 
+        self.saved={'worm':0,'5':0,'4':0,'3':0,'2':0,'1':0}
         self.score=0 #initialise score at 0
 
     def calc_score(self):
-        self.score=sum([i*self.saved[i] for i in self.saved])
+        self.score=sum([int(i)*self.saved[i] for i in self.saved if i!="worm"])
+        self.score+=self.saved["worm"]*5 #multiply number of worms by 5 for the score
         return self.score
 
 
 #how to integrate this into a class, it shares lots of information with Saved_dice, but
 #also from Roll class, perhaps it can interact with both of them. 
-    def dice_select(self,go_count,dice_left):
-        choice=int(input("Select which number to save: "))
-        if choice in go_count.keys() and self.saved[choice]==0: #make sure they haven't already saved that number: 
-            self.saved[choice]=go_count[choice]
-            dice_left-=go_count[choice]
-            return dice_left, self.saved
+    def dice_select(self,go_count):
+        choice=input("Select which number to save: ")
+        if self.saved[choice]!=0:
+            print(f"You have already saved {choice}s")
+            return self.dice_select(go_count)
+            
+        elif choice not in go_count.keys(): #make sure they haven't already saved that number: 
+            print(f"You did not roll a {choice}")
+            return self.dice_select(go_count)
+        
+        #need to add in a condtion for if all dice are ones that have already been selected
+        
         else:
-            print("You have already saved this number or you did not roll it")
-            #force them to select again
-            return self.dice_select(go_count,dice_left)
+            self.saved[choice]=go_count[choice]
+            self.dice_left-=go_count[choice]
+            return self.dice_left, self.saved
 
 "simulate an entire go"
-dice_left=8
 this_round=Round()
-while dice_left>0: #ends loop if run out of dice
+while this_round.dice_left>0: #ends loop if run out of dice, calls attribute from this round
     
     roll=Roll() #create instance of Roll class to simulate a roll has taken place
-    go_count=roll.one_roll_sim(dice_left)
+    #throw_dice=str(input("Press Enter to roll the dice: "))
+    go_count=roll.one_roll_sim(this_round.dice_left)
     print(" You rolled ")
-    print(go_count) 
+    print(go_count) #displays dice rolled in that round, including worm
     
     #currently uses a procedural function, need to change into a class
-    dice_left, saved=this_round.dice_select(go_count,dice_left)
+    dice_left, saved=this_round.dice_select(go_count)
     score=this_round.calc_score()
     print(f"Your score is {score}") 
     if score>=21:
         play_on=str(input("Do you want to keep rolling? (y/n)"))
         if play_on=="n":
             break
+print(f"Your score for this round is {score}")
         
     #add in going kaput if you don't roll a worm (6) or if you don't hit 21
     #add in something that happens when you can't get over 21. 

@@ -65,6 +65,7 @@ class Round():
         self.dice_left=8 #initialise the dice left at 8 
         self.saved={'worm':0,'5':0,'4':0,'3':0,'2':0,'1':0}
         self.score=0 #initialise score at 0
+        self.overlap_lst=[] #list to check overlap of saved and go count to check if play still possible
 
     def calc_score(self):
         self.score=sum([int(i)*self.saved[i] for i in self.saved if i!="worm"])
@@ -75,7 +76,11 @@ class Round():
 #how to integrate this into a class, it shares lots of information with Saved_dice, but
 #also from Roll class, perhaps it can interact with both of them. 
     def dice_select(self,go_count):
-        choice=input("Select which number to save: ")
+        choice="" #empty string to begin
+        while choice not in self.saved.keys(): #re-prompts if user mistypes
+            choice=input("Select which number to save: ")
+            
+            
         if self.saved[choice]!=0:
             print(f"You have already saved {choice}s")
             return self.dice_select(go_count)
@@ -90,33 +95,58 @@ class Round():
             self.saved[choice]=go_count[choice]
             self.dice_left-=go_count[choice]
             return self.dice_left, self.saved
+            
+        
+    def worm_check(self):
+        if self.saved["worm"]==0:
+            print("You did not roll any worms, so your go is KAPUT")
+            self.score=0
+        return self.score
+    
+    def able_to_save_dice(self,go_count):
+        #if all elements are non-zero then all rolled dice have already been saved
+        self.overlap_lst=[self.saved[i] for i in go_count.keys()]
+        if all(self.overlap_lst)!=0: #if every element of overlap list are not zero then we cant choose
+            print("You have already saved all the dice you just rolled, you have gone KAPUT")
+            return False #they are no longer able to play on
+        else: 
+            return True #they can play on
+        
+        
 
 "simulate an entire go"
-this_round=Round()
-while this_round.dice_left>0: #ends loop if run out of dice, calls attribute from this round
-    
-    roll=Roll() #create instance of Roll class to simulate a roll has taken place
-    #throw_dice=str(input("Press Enter to roll the dice: "))
-    go_count=roll.one_roll_sim(this_round.dice_left)
-    print(" You rolled ")
-    print(go_count) #displays dice rolled in that round, including worm
-    
-    #currently uses a procedural function, need to change into a class
-    dice_left, saved=this_round.dice_select(go_count)
-    score=this_round.calc_score()
-    print(f"Your score is {score}") 
-    if score>=21:
-        play_on=str(input("Do you want to keep rolling? (y/n)"))
-        if play_on=="n":
-            break
-print(f"Your score for this round is {score}")
+def Round_simulation():
+    this_round=Round()
+    while this_round.dice_left>0: #ends loop if run out of dice, calls attribute from this round
         
-    #add in going kaput if you don't roll a worm (6) or if you don't hit 21
-    #add in something that happens when you can't get over 21. 
-    #or when the rolls come up with only numbers you've already save. 
-    
+        roll=Roll() #create instance of Roll class to simulate a roll has taken place
+        #throw_dice=str(input("Press Enter to roll the dice: "))
+        go_count=roll.one_roll_sim(this_round.dice_left)
+        print(" You rolled ")
+        print(go_count) #displays dice rolled in that round, including worm
+        
+        #end go if they can't save anymore dice
+        if not this_round.able_to_save_dice(go_count):
+            #set score to 0 and end round
+            score=0
+            break
+            
+        #currently uses a procedural function, need to change into a class
+        dice_left, saved=this_round.dice_select(go_count)
+        score=this_round.calc_score()
+        print(f"Your score is {score}") 
+        print(f"You have {dice_left} dice left")
+        if score>=21 and dice_left>0: #can't keep playing if no dice are left to throw 
+            play_on=str(input("Do you want to keep rolling? (y/n)"))
+            if play_on=="n":
+                break
+            
+    score=this_round.worm_check() #check if the go had worms in it 
+    print(f"Your score for this round is {score}")
+    return score
+  
 
-
+Round_simulation()
 
 
     

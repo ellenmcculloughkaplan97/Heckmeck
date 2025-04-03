@@ -6,28 +6,7 @@ Created on Thu Mar 27 14:31:13 2025
 """
 
 """Heckmeck Simulator"""
-
-class Tile:
-    def __init__(self,number,worm_score):
-        self.number=number
-        self.worm_score=worm_score
-        self.onboard=True
-        self.flipped=False
-        
-
-"dictionary to store worm tiles"
-worm_dict={}
-"loop to create all tiles"
-worm_score=1 #initialise worm_score at 1
-counter=0
-for i in range(21,37): #create tiles with numbers from 21 to 37
-    worm_dict[i]=Tile(i,worm_score)
-    #worm_score increases every 4 tiles
-    counter+=1
-    if counter%4==0: 
-        worm_score+=1
-        
-        
+              
 import random
 "Rolling simulator"
 class Roll():
@@ -108,6 +87,7 @@ class Round():
         self.overlap_lst=[self.saved[i] for i in go_count.keys()]
         if all(self.overlap_lst)!=0: #if every element of overlap list are not zero then we cant choose
             print("You have already saved all the dice you just rolled, you have gone KAPUT")
+            self.score=0
             return False #they are no longer able to play on
         else: 
             return True #they can play on
@@ -146,7 +126,117 @@ def Round_simulation():
     return score
   
 
-Round_simulation()
+class Player():
+    def __init__(self,name):
+        self.tiles=[] #list of tiles each player possess
+        self.name=name
+        self.final_score=0
+        
+    def calculate_final_score(self):
+        self.final_score=sum([tile.worm_score for tile in self.tiles])
+        return self.final_score
+  
+class Table:
+    def __init__(self):
+        "dictionary to store worm tiles"
+        self.worm_dict={}
+        
+        
+    def initialise_tiles(self):
+        "loop to create all tiles"
+        worm_score=1 #initialise worm_score at 1
+        counter=0
+        for i in range(21,37): #create tiles with numbers from 21 to 37
+            self.worm_dict[i]=Tile(i,worm_score)
+            #worm_score increases every 4 tiles
+            counter+=1
+            if counter%4==0: 
+                worm_score+=1
+        return self.worm_dict
+    
+    
+    def display_tiles(self):
+        for number,tile in self.worm_dict.items():
+            if tile.flipped==True:
+                print(number,"FLIPPED")
+            elif tile.onboard==True:
+                print(number, "ON")
+            else:
+                print(number, "OFF")
+        return
+    
+    def flip_top_tile(self):
+        for number, tile in reversed(self.worm_dict.items()):
+            if tile.onboard==True and tile.flipped==False:
+                self.worm_dict[number].flipped=True
+                break
+        return  self.worm_dict
+    
+    def end_game_test(self):
+        if all(tile.onboard==False or tile.flipped==True for tile in self.worm_dict.values()):
+            print("The Game is over")
+            return True
+        else:
+            return False #don't end game unless all tiles are out of play
+            
+
+        
+class Tile:
+    def __init__(self,number,worm_score):
+        self.number=number
+        self.worm_score=worm_score
+        self.onboard=True
+        self.flipped=False
+        
+    #method to check if tile is available in someway
+    def available(self):
+        if self.onboard==False or self.flipped==True:
+            return False
+        else:
+            return True
+        
+
+player1=Player('Ellen')
+player2=Player('Sophie')
+players=[player1,player2]
+
+table=Table()
+table.initialise_tiles()
+table.display_tiles()
+
+"""
+#game stub
+def Round_simulation_dummy():
+    return random.randint(21,36)
+"""
+
+
+'Play game'
+playing=True
+while playing==True:
+    #continue to play while there are any worms left on the board that are unflipped
+    for player in players: #each player had a go
+        score=Round_simulation()
+        print(f"{player.name} scored {score}")
+        if score in table.worm_dict.keys(): #if score is on the board
+            player.tiles.append(table.worm_dict[score])
+            table.worm_dict[score].onboard=False #take tile off main board
+            print(f"{player.name} won tile {table.worm_dict[score].number}")
+        elif score==0: #turn over top tile
+            table.flip_top_tile()
+        
+            
+            #search for tile with highest score that has not yet been flipped or off the board
+    table.display_tiles() 
+    if table.end_game_test():
+        break
+
+
+    
+        
+        
+        
+        
 
 
     
